@@ -4,9 +4,7 @@ A Chrome extension that shows the size of each pull request on
 [github.com/notifications](https://github.com/notifications): additions,
 deletions, and GitHub's five-block diffstat, right in the notification row.
 
-```
-+10 −53 ▢▢▢▢▢
-```
+![A notification row showing +9 −54 and four red diffstat blocks next to the reason and timestamp](screenshot.png)
 
 Then you can tell a one-line fix from a 2,000-line refactor before you open it.
 
