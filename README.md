@@ -5,7 +5,7 @@ A Chrome extension that shows the size of each pull request on
 deletions, and GitHub's five-block diffstat, right after the PR number in
 each notification row.
 
-![A notification row showing +9 −54 and four red diffstat blocks next to the reason and timestamp](screenshot.png)
+![A notification row showing +9 −54 and four red diffstat blocks right after the PR number](screenshot.png)
 
 Then you can tell a one-line fix from a 2,000-line refactor before you open it.
 
