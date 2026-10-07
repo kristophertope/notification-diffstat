@@ -2,7 +2,8 @@
 
 A Chrome extension that shows the size of each pull request on
 [github.com/notifications](https://github.com/notifications): additions,
-deletions, and GitHub's five-block diffstat, right in the notification row.
+deletions, and GitHub's five-block diffstat, right after the PR number in
+each notification row.
 
 ![A notification row showing +9 −54 and four red diffstat blocks next to the reason and timestamp](screenshot.png)
 
@@ -59,8 +60,8 @@ After editing, click the reload icon on the extension's card in
 
 ## Limitations
 
-- The placement logic depends on GitHub's notification markup. If GitHub
-  changes it, the badge may fall back to sitting after the PR title.
+- The badge is placed using GitHub's notification markup. If GitHub changes
+  it, the badge may stop appearing until the extension is updated.
 - Very large PRs mean very large `.diff` downloads.
 
 ## License

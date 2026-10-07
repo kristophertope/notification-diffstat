@@ -23,23 +23,18 @@ function prPath(link) {
 }
 
 async function decorate(link, path) {
+  // Sits right after "owner/repo #123" on the title's top line.
+  const repoLine = link.querySelector("p.f6")
+  if (!repoLine) return
+
   const badge = document.createElement("span")
   badge.className = "gh-diffstat gh-diffstat--loading"
   badge.textContent = "…"
-  place(link, badge)
+  repoLine.append(badge)
 
   const res = await chrome.runtime.sendMessage({ type: "diffstat", path })
   if (res?.ok) render(badge, res.stats)
   else fail(badge, res?.error ?? "no response")
-}
-
-// The link ends with a desktop-only column holding the "+N" participant
-// count. It's present even when empty, so putting the badge just before it
-// lands in the same spot on every row. styles.css fixes the column widths.
-function place(link, badge) {
-  const countColumn = link.querySelector(":scope > .d-md-flex")
-  if (countColumn) countColumn.before(badge)
-  else link.after(badge)
 }
 
 function render(badge, stats) {

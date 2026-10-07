@@ -1,17 +1,12 @@
-/* Fixed widths so the badge lines up on every row, whatever the "+N" count
-   or reason text. Blocks are right-aligned so they form a column. */
 .gh-diffstat {
   display: inline-flex;
   align-items: center;
-  justify-content: flex-end;
+  vertical-align: middle;
   gap: 2px;
-  min-width: 140px;
   margin-left: 8px;
   font-size: 12px;
   font-weight: 600;
   white-space: nowrap;
-  flex-shrink: 0;
-  align-self: center;
 }
 
 .gh-diffstat--loading,
@@ -50,11 +45,3 @@
   outline: none;
 }
 
-.notification-list-item-link > .d-md-flex {
-  min-width: 64px;
-  justify-content: flex-end;
-}
-
-.notifications-list-item .flex-md-row-reverse > span.f6 {
-  min-width: 160px;
-}
