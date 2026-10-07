@@ -32,9 +32,37 @@ async function decorate(link, path) {
   badge.textContent = "…"
   repoLine.append(badge)
 
-  const res = await chrome.runtime.sendMessage({ type: "diffstat", path })
-  if (res?.ok) render(badge, res.stats)
-  else fail(badge, res?.error ?? "no response")
+  const [res, requested] = await Promise.all([ask({ type: "diffstat", path }), requestedPaths()])
+  if (res.ok) render(badge, res.result)
+  else fail(badge, res.error)
+  if (requested.includes(path.toLowerCase())) badge.append(star())
+}
+
+async function ask(msg) {
+  return (await chrome.runtime.sendMessage(msg)) ?? { ok: false, error: "no response" }
+}
+
+// One search per page view, shared by every row on it.
+let requested = { href: null, paths: null }
+
+function requestedPaths() {
+  if (requested.href !== location.href) {
+    requested = { href: location.href, paths: loadRequested() }
+  }
+  return requested.paths
+}
+
+async function loadRequested() {
+  const res = await ask({ type: "requested" })
+  if (res.ok) return res.result
+  console.warn("notification-diffstat: couldn't load your review requests:", res.error)
+  return []
+}
+
+function star() {
+  const el = span("gh-diffstat__star", "★")
+  el.title = "Review requested from you by name"
+  return el
 }
 
 function render(badge, stats) {

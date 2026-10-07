@@ -28,8 +28,14 @@ It also works in other Chromium browsers (Edge, Brave, Arc).
   `github.com/<owner>/<repo>/pull/<n>.diff` using your existing GitHub login
   and counts the added and removed lines. Private repos work if your account
   can see them. You don't need a token.
+- A pink ★ after the diffstat marks PRs where someone requested your review
+  by name, as opposed to a team you're on. The extension finds these with one
+  GitHub search (`is:pr is:open user-review-requested:@me`) per page view.
+  GitHub clears a request once you submit a review, so the star goes away
+  then too.
 - Up to four diffs are fetched at once, and results are cached for five
-  minutes per browser session.
+  minutes per browser session. The review request search is cached for two
+  minutes.
 - The blocks use GitHub's rounding, so `+10 −53` shows 0 green, 4 red and
   1 grey, the same as on the PR page.
 - Colors come from GitHub's own CSS variables, so it matches light and dark
@@ -42,9 +48,9 @@ see the error.
 
 | Permission | Why |
 | --- | --- |
-| `https://github.com/*` | Runs on the notifications page and requests `.diff` files. |
+| `https://github.com/*` | Runs on the notifications page, requests `.diff` files and searches your review requests. |
 | `https://patch-diff.githubusercontent.com/*` | GitHub redirects `.diff` requests here. |
-| `storage` | Caches diff counts for the browser session. |
+| `storage` | Caches diff counts and review requests for the browser session. |
 
 The extension sends nothing anywhere except GitHub.
 
@@ -54,7 +60,8 @@ The extension sends nothing anywhere except GitHub.
 node test.js
 ```
 
-The tests cover the diff line counter and the block math in `diffstat.js`.
+The tests cover the diff line counter and block math in `diffstat.js`, and
+the search response parsing in `review-requests.js`.
 After editing, click the reload icon on the extension's card in
 `chrome://extensions`, then reload the notifications page.
 

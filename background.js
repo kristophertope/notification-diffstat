@@ -1,33 +1,59 @@
-const CACHE_TTL_MS = 5 * 60 * 1000
+const DIFFSTAT_TTL_MS = 5 * 60 * 1000
+const REQUESTED_TTL_MS = 2 * 60 * 1000
 const MAX_CONCURRENT = 4
+const MAX_SEARCH_PAGES = 10
 
-importScripts("diffstat.js")
+importScripts("diffstat.js", "review-requests.js")
 
 let active = 0
 const queue = []
 
+const handlers = {
+  diffstat: ({ path }) => cached(`diffstat:${path}`, DIFFSTAT_TTL_MS, () => throttled(() => fetchStats(path))),
+  requested: () => cached("requested", REQUESTED_TTL_MS, fetchRequested)
+}
+
 chrome.runtime.onMessage.addListener((msg, _sender, sendResponse) => {
-  if (msg?.type !== "diffstat") return
-  statsFor(msg.path)
-    .then((stats) => sendResponse({ ok: true, stats }))
+  const handler = handlers[msg?.type]
+  if (!handler) return
+  handler(msg)
+    .then((result) => sendResponse({ ok: true, result }))
     .catch((err) => sendResponse({ ok: false, error: String(err) }))
   return true
 })
 
-async function statsFor(path) {
-  const key = `diffstat:${path}`
-  const cached = (await chrome.storage.session.get(key))[key]
-  if (cached && Date.now() - cached.at < CACHE_TTL_MS) return cached.stats
+async function cached(key, ttl, load) {
+  const hit = (await chrome.storage.session.get(key))[key]
+  if (hit && Date.now() - hit.at < ttl) return hit.value
 
-  const stats = await throttled(() => fetchStats(path))
-  await chrome.storage.session.set({ [key]: { at: Date.now(), stats } })
-  return stats
+  const value = await load()
+  await chrome.storage.session.set({ [key]: { at: Date.now(), value } })
+  return value
 }
 
 async function fetchStats(path) {
   const res = await fetch(`https://github.com${path}.diff`, { credentials: "include" })
   if (!res.ok) throw new Error(`HTTP ${res.status} for ${path}.diff`)
   return Diffstat.count(await res.text())
+}
+
+async function fetchRequested() {
+  const paths = []
+  for (let page = 1; page <= MAX_SEARCH_PAGES; page++) {
+    const result = ReviewRequests.parse(await fetchSearchPage(page))
+    paths.push(...result.paths)
+    if (page >= result.pageCount) break
+  }
+  return paths
+}
+
+async function fetchSearchPage(page) {
+  const res = await fetch(ReviewRequests.searchUrl(page), {
+    credentials: "include",
+    headers: { Accept: "application/json", "X-Requested-With": "XMLHttpRequest" }
+  })
+  if (!res.ok) throw new Error(`HTTP ${res.status} searching review requests`)
+  return res.json()
 }
 
 function throttled(task) {

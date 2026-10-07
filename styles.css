@@ -45,3 +45,10 @@
   outline: none;
 }
 
+
+.gh-diffstat__star {
+  margin-left: 6px;
+  color: #ff2d95;
+  font-size: 14px;
+  line-height: 1;
+}
