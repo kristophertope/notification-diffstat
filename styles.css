@@ -1,0 +1,47 @@
+.gh-diffstat {
+  display: inline-flex;
+  align-items: center;
+  gap: 2px;
+  margin-right: 16px;
+  font-size: 12px;
+  font-weight: 600;
+  white-space: nowrap;
+  flex-shrink: 0;
+  align-self: center;
+}
+
+.gh-diffstat--loading,
+.gh-diffstat--error {
+  color: var(--fgColor-muted, #59636e);
+  font-weight: 400;
+}
+
+.gh-diffstat__add {
+  color: var(--fgColor-success, #1a7f37);
+  margin-right: 4px;
+}
+
+.gh-diffstat__del {
+  color: var(--fgColor-danger, #d1242f);
+  margin-right: 6px;
+}
+
+.gh-diffstat__block {
+  display: inline-block;
+  width: 8px;
+  height: 8px;
+  border-radius: 2px;
+  background: var(--bgColor-neutral-muted, #818b981f);
+  outline: 1px solid var(--borderColor-muted, #d1d9e0b3);
+  outline-offset: -1px;
+}
+
+.gh-diffstat__block--add {
+  background: var(--bgColor-success-emphasis, #1f883d);
+  outline: none;
+}
+
+.gh-diffstat__block--del {
+  background: var(--bgColor-danger-emphasis, #cf222e);
+  outline: none;
+}
