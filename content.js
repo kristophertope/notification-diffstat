@@ -1,10 +1,4 @@
 const PR_PATH = /^\/[^/]+\/[^/]+\/pull\/\d+/
-const PLUS_COUNT = /^\+\d+$/
-const REASONS = [
-  "review requested", "mention", "team mention", "author", "comment",
-  "assigned", "subscribed", "state change", "ci activity", "manual",
-  "security alert", "approval requested", "your activity"
-]
 const DONE = "data-gh-diffstat"
 
 function onNotificationsPage() {
@@ -18,7 +12,7 @@ function scan() {
     const row = link.closest("li")
     if (!path || !row || row.hasAttribute(DONE)) continue
     row.setAttribute(DONE, "")
-    decorate(row, link, path)
+    decorate(link, path)
   }
 }
 
@@ -28,44 +22,24 @@ function prPath(link) {
   return url.pathname.match(PR_PATH)?.[0] ?? null
 }
 
-async function decorate(row, link, path) {
+async function decorate(link, path) {
   const badge = document.createElement("span")
   badge.className = "gh-diffstat gh-diffstat--loading"
   badge.textContent = "…"
-  place(row, link, badge)
+  place(link, badge)
 
   const res = await chrome.runtime.sendMessage({ type: "diffstat", path })
   if (res?.ok) render(badge, res.stats)
   else fail(badge, res?.error ?? "no response")
 }
 
-// Put the badge just before the "+N" column, else before the reason column,
-// else after the title link.
-function place(row, link, badge) {
-  const anchor = findLeaf(row, (t) => PLUS_COUNT.test(t)) ??
-    findLeaf(row, (t) => REASONS.includes(t.toLowerCase()))
-  if (anchor) {
-    const column = topmostSoleChild(anchor, row)
-    column.parentElement.insertBefore(badge, column)
-  } else {
-    link.after(badge)
-  }
-}
-
-function findLeaf(root, test) {
-  for (const el of root.querySelectorAll("*")) {
-    if (el.children.length === 0 && test(el.textContent.trim())) return el
-  }
-  return null
-}
-
-// Climb from el while it is its parent's only element child, so we insert
-// next to the column wrapper rather than inside it.
-function topmostSoleChild(el, stopAt) {
-  while (el.parentElement && el.parentElement !== stopAt && el.parentElement.children.length === 1) {
-    el = el.parentElement
-  }
-  return el
+// The link ends with a desktop-only column holding the "+N" participant
+// count. It's present even when empty, so putting the badge just before it
+// lands in the same spot on every row. styles.css fixes the column widths.
+function place(link, badge) {
+  const countColumn = link.querySelector(":scope > .d-md-flex")
+  if (countColumn) countColumn.before(badge)
+  else link.after(badge)
 }
 
 function render(badge, stats) {
