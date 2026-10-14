@@ -1,13 +1,6 @@
 const PR_PATH = /^\/[^/]+\/[^/]+\/pull\/\d+/
 const DONE = "data-gh-diffstat"
 const ROW = 'li, [role="listitem"]'
-// The first span in a /pulls row's description holds "owner/repo #123".
-// GitHub hashes the CSS module class (Description-module__description__AbC12),
-// so match its start, and not names that only contain it, like
-// TitleDescription-module__.
-const DESCRIPTION_SPAN = ['[class^="Description-module__"]', '[class*=" Description-module__"]']
-  .map((description) => `${description} > span:first-child`)
-  .join(", ")
 
 // On each page: the link that names the row's PR, and where the badge goes,
 // right after "owner/repo #123". On /pulls a row can link to other PRs too,
@@ -17,9 +10,21 @@ const PAGES = [
   {
     prefix: "/pulls",
     link: 'h3 a[href*="/pull/"]',
-    anchor: (_link, row) => row.querySelector(DESCRIPTION_SPAN)
+    anchor: prNumberLine
   }
 ]
+
+// The span in a /pulls row's description that holds "owner/repo #123".
+// GitHub renames its hashed CSS classes (Description-module__description__AbC12
+// became description__mZjLFE), so find it by the "#123" text instead, outside
+// the title so a PR title mentioning its own number doesn't count.
+function prNumberLine(link, row) {
+  const number = `#${prPath(link)?.split("/").pop()}`
+  for (const span of row.querySelectorAll("span")) {
+    if (span.textContent.trim() === number && !span.closest("h3")) return span.parentElement
+  }
+  return null
+}
 
 // "/pulls" and "/pulls/review-requested", but not "/pullsbot/widgets/pulls".
 function currentPage() {

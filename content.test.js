@@ -29,16 +29,16 @@ function load(url, html) {
   return { window, document: window.document, asked, settle, badges }
 }
 
-// Markup from github.com/pulls (October 2026), with the hashed suffixes of the
-// CSS-module class names shortened.
-function pullsRow(number, { title = number, extra = "", tag = "li" } = {}) {
+// Markup from github.com/pulls (October 13, 2026). GitHub hashes these class
+// names and renames them, so content.js mustn't depend on them.
+function pullsRow(number, { title = number, heading = "Make widgets faster", extra = "", tag = "li" } = {}) {
   return `
-    <${tag} class="ListItem-module__row PullsListItem-module__row" ${tag === "li" ? "" : 'role="listitem"'}>
+    <${tag} class="listItem__X41oTe" ${tag === "li" ? "" : 'role="listitem"'}>
       ${extra}
-      <div class="Title-module__container"><h3 class="Title-module__heading">
-        <a class="Title-module__link" href="https://github.com/acme/widgets/pull/${title}">Make widgets faster</a>
+      <div class="container__mDVuhO"><h3 class="heading__fzQskI">
+        <a class="anchor__PSAOdR" href="https://github.com/acme/widgets/pull/${title}">${heading}</a>
       </h3></div>
-      <div class="MainContent-module__inner"><div class="Description-module__description PullsListItem-module__description">
+      <div class="inner__Rm1Enx"><div class="container__W45oI6 description__mZjLFE">
         <span><button>acme/widgets</button><span>#${title}</span></span>
         <span><span>·</span> opened yesterday</span>
       </div></div>
@@ -56,7 +56,7 @@ test("/pulls: each row gets one badge for its PR, after owner/repo #number", asy
   const page = load("https://github.com/pulls/review-requested", list(pullsRow(12), pullsRow(34)))
   await page.settle()
   assert.deepStrictEqual(page.badges(), ["+12", "+34"])
-  for (const span of page.document.querySelectorAll('[class*="Description-module"] > span:first-child')) {
+  for (const span of page.document.querySelectorAll(".description__mZjLFE > span:first-child")) {
     assert.strictEqual(span.querySelectorAll(".gh-diffstat").length, 1)
   }
 })
@@ -76,11 +76,11 @@ test("rows added after load are decorated", async () => {
 })
 
 test("a row whose description renders after its title is decorated", async () => {
-  const [, before, description, after] = pullsRow(12).match(/^([\s\S]*)(<div class="Description-module[\s\S]*?<\/div>)([\s\S]*)$/)
+  const [, before, description, after] = pullsRow(12).match(/^([\s\S]*)(<div class="container__W45oI6[\s\S]*?<\/div>)([\s\S]*)$/)
   const page = load("https://github.com/pulls", list(before + after))
   await page.settle()
   assert.deepStrictEqual(page.badges(), [])
-  page.document.querySelector('[class*="MainContent-module"]').insertAdjacentHTML("beforeend", description)
+  page.document.querySelector(".inner__Rm1Enx").insertAdjacentHTML("beforeend", description)
   await page.settle()
   assert.deepStrictEqual(page.badges(), ["+12"])
 })
@@ -109,7 +109,7 @@ test("a row React reuses for another PR shows that PR's diffstat", async () => {
   const page = load("https://github.com/pulls", list(pullsRow(12)))
   await page.settle()
   page.document.querySelector("a").setAttribute("href", "https://github.com/acme/widgets/pull/34")
-  page.document.querySelector('[class*="Description-module"] > span:first-child > span').textContent = "#34"
+  page.document.querySelector(".description__mZjLFE > span:first-child > span").textContent = "#34"
   await page.settle()
   assert.deepStrictEqual(page.badges(), ["+34"])
 })
@@ -117,7 +117,7 @@ test("a row React reuses for another PR shows that PR's diffstat", async () => {
 test("a row whose badge span React re-renders gets a badge again", async () => {
   const page = load("https://github.com/pulls", list(pullsRow(12)))
   await page.settle()
-  const span = page.document.querySelector('[class*="Description-module"] > span:first-child')
+  const span = page.document.querySelector(".description__mZjLFE > span:first-child")
   span.replaceWith(span.ownerDocument.createRange().createContextualFragment("<span><button>acme/widgets</button><span>#12</span></span>"))
   await page.settle()
   assert.deepStrictEqual(page.badges(), ["+12"])
@@ -135,11 +135,11 @@ test("the badge uses the row's title PR, not the first PR link in the row", asyn
 test("a row with no badge anchor isn't re-queried on every mutation", async () => {
   const page = load("https://github.com/pulls", list(`<li><h3><a href="https://github.com/acme/widgets/pull/12">No description</a></h3></li>`))
   const { Element } = page.window
-  const querySelector = Element.prototype.querySelector
+  const querySelectorAll = Element.prototype.querySelectorAll
   let lookups = 0
-  Element.prototype.querySelector = function (selector) {
-    if (selector.includes("Description-module")) lookups++
-    return querySelector.call(this, selector)
+  Element.prototype.querySelectorAll = function (selector) {
+    if (selector === "span") lookups++
+    return querySelectorAll.call(this, selector)
   }
   for (let i = 0; i < 5; i++) {
     page.document.body.append(page.document.createElement("div"))
@@ -149,12 +149,26 @@ test("a row with no badge anchor isn't re-queried on every mutation", async () =
 })
 
 // Review finding 5.
-test("another *Description-module* element earlier in the row doesn't take the badge", async () => {
-  const decoy = `<div class="TitleDescription-module__summary"><span>Draft</span></div>`
+test("another span earlier in the row doesn't take the badge", async () => {
+  const decoy = `<div class="summary__Q1w2E3"><span>Draft</span></div>`
   const page = load("https://github.com/pulls", list(pullsRow(12, { extra: decoy })))
   await page.settle()
-  assert.deepStrictEqual(page.badges(page.document.querySelector(".TitleDescription-module__summary")), [])
-  assert.deepStrictEqual(page.badges(page.document.querySelector(".Description-module__description")), ["+12"])
+  assert.deepStrictEqual(page.badges(page.document.querySelector(".summary__Q1w2E3")), [])
+  assert.deepStrictEqual(page.badges(page.document.querySelector(".description__mZjLFE")), ["+12"])
+})
+
+test("a title that mentions its own PR number doesn't take the badge", async () => {
+  const page = load("https://github.com/pulls", list(pullsRow(12, { heading: "<span>#12</span> follow-up" })))
+  await page.settle()
+  assert.deepStrictEqual(page.badges(page.document.querySelector("h3")), [])
+  assert.deepStrictEqual(page.badges(page.document.querySelector(".description__mZjLFE")), ["+12"])
+})
+
+test("the old Description-module class names still work", async () => {
+  const old = pullsRow(12).replace("container__W45oI6 description__mZjLFE", "Description-module__description__AbC12")
+  const page = load("https://github.com/pulls", list(old))
+  await page.settle()
+  assert.deepStrictEqual(page.badges(), ["+12"])
 })
 
 // Review finding 6.
